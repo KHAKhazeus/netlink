@@ -98,6 +98,22 @@ func LinkSetMulticastOff(link Link) error {
 	return pkgHandle.LinkSetMulticastOff(link)
 }
 
+// LinkSetAllmulticastOff disables the reception of multicast packets for the link device.
+// Equivalent to: `ip link set $link multicast off`
+func (h *Handle) LinkSetMulticastOff(link Link) error {
+	base := link.Attrs()
+	h.ensureIndex(base)
+	req := h.newNetlinkRequest(unix.RTM_NEWLINK, unix.NLM_F_ACK)
+
+	msg := nl.NewIfInfomsg(unix.AF_UNSPEC)
+	msg.Change = unix.IFF_MULTICAST
+	msg.Index = int32(base.Index)
+	req.AddData(msg)
+
+	_, err := req.Execute(unix.NETLINK_ROUTE, 0)
+	return err
+}
+
 func (h *Handle) LinkSetARPOff(link Link) error {
 	base := link.Attrs()
 	h.ensureIndex(base)
