@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/vishvananda/netlink/nl"
+	"github.com/KHAKhazeus/netlink/nl"
 	"github.com/vishvananda/netns"
 	"golang.org/x/sys/unix"
 )
@@ -67,6 +67,35 @@ func (h *Handle) ensureIndex(link *LinkAttrs) {
 			link.Index = newlink.Attrs().Index
 		}
 	}
+}
+
+// LinkSetMulticastOn enables the reception of multicast packets for the link device.
+// Equivalent to: `ip link set $link multicast on`
+func LinkSetMulticastOn(link Link) error {
+	return pkgHandle.LinkSetMulticastOn(link)
+}
+
+// LinkSetMulticastOn enables the reception of multicast packets for the link device.
+// Equivalent to: `ip link set $link multicast on`
+func (h *Handle) LinkSetMulticastOn(link Link) error {
+	base := link.Attrs()
+	h.ensureIndex(base)
+	req := h.newNetlinkRequest(unix.RTM_NEWLINK, unix.NLM_F_ACK)
+
+	msg := nl.NewIfInfomsg(unix.AF_UNSPEC)
+	msg.Change = unix.IFF_MULTICAST
+	msg.Flags = unix.IFF_MULTICAST
+	msg.Index = int32(base.Index)
+	req.AddData(msg)
+
+	_, err := req.Execute(unix.NETLINK_ROUTE, 0)
+	return err
+}
+
+// LinkSetAllmulticastOff disables the reception of multicast packets for the link device.
+// Equivalent to: `ip link set $link multicast off`
+func LinkSetMulticastOff(link Link) error {
+	return pkgHandle.LinkSetMulticastOff(link)
 }
 
 func (h *Handle) LinkSetARPOff(link Link) error {
